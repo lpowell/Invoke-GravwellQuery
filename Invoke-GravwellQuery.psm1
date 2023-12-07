@@ -94,6 +94,10 @@ function Import{
         Add-Member -InputObject $Configuration -MemberType NoteProperty -Name Query -Value $Loaded.Query
         Add-Member -InputObject $Configuration -MemberType NoteProperty -Name Duration -Value $Loaded.Duration
         Add-Member -InputObject $Configuration -MemberType NoteProperty -Name Format -Value $Loaded.Format
+    }else{
+        Add-Member -InputObject $Configuration -MemberType NoteProperty -Name Query -Value $Query
+        Add-Member -InputObject $Configuration -MemberType NoteProperty -Name Duration -Value $Duration
+        Add-Member -InputObject $Configuration -MemberType NoteProperty -Name Format -Value $Format
     }
     return $Configuration
 }
