@@ -1,0 +1,7 @@
+{
+  "ServerIP": "162.212.152.132:31001",
+  "Key": "mxQFc1APKSxDQdSF6mfqNOSNzvz8T4uvbpKa4G-Y8znBqC7pvAiOZQ",
+  "Query": "tag=honeypot",
+  "Duration": "24h",
+  "Format": "csv"
+}
