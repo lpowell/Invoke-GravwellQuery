@@ -39,7 +39,7 @@ function Invoke-GravwellQuery{
 
     # Import or Export API configurations 
     if($Save -Or $Load){
-        $Configuration = Import
+        $Properties = Import
     }else{
         $Properties =@{
             "ServerIP" = $ServerIP
@@ -48,14 +48,11 @@ function Invoke-GravwellQuery{
             "Duration" = $Duration
             "Format" = $Format
         }
-        $Configuration = New-Object psobject -Property $Properties
     }
-
     # Build base URL for webrequests
-    $BaseURL = "http://" + $Configuration.ServerIP + "/api/search/direct"
-
+    $BaseURL = "http://" + $Properties.ServerIP + "/api/search/direct"
     # Send to Requests
-    Requests $BaseURL $Configuration
+    Requests $BaseURL $Properties
 
 }
 
@@ -68,59 +65,46 @@ function Import{
             "ServerIP" = $ServerIP
             "Key" = $Key
         }
-        $Configuration = New-Object psobject -Property $Properties
         if($SaveQuery -eq "yes"){
-            Add-Member -InputObject $Configuration -MemberType NoteProperty -Name Query -Value $Query
-            Add-Member -InputObject $Configuration -MemberType NoteProperty -Name Duration -Value $Duration
-            Add-Member -InputObject $Configuration -MemberType NoteProperty -Name Format -Value $Format
+            $Properties.Query = $Query
+            $Properties.Duration = $Duration
+            $Properties.Format = $Format
         }
         
         # Save the configuration file
-        ConvertTo-Json -InputObject $Configuration | Out-File "$ConfigurationFile"
-        return $Configuration
+        ConvertTo-Json -InputObject $Properties | Out-File $ConfigurationFile
+        return $Properties
     }
     
     # Load File
-    $Loaded = Get-Content $ConfigurationFile -Raw
-    $Loaded = ConvertFrom-Json $Loaded
-    $Properties =@{
-        "ServerIP" = $Loaded.ServerIP
-        "Key" = $Loaded.Key
-    }
-    $Configuration = New-Object psobject -Property $Properties
+    $Properties = Get-Content $ConfigurationFile -Raw | ConvertFrom-Json
 
-    # Check for query parameters
-    if($Loaded.Query){
-        Add-Member -InputObject $Configuration -MemberType NoteProperty -Name Query -Value $Loaded.Query
-        Add-Member -InputObject $Configuration -MemberType NoteProperty -Name Duration -Value $Loaded.Duration
-        Add-Member -InputObject $Configuration -MemberType NoteProperty -Name Format -Value $Loaded.Format
-    }else{
-        Add-Member -InputObject $Configuration -MemberType NoteProperty -Name Query -Value $Query
-        Add-Member -InputObject $Configuration -MemberType NoteProperty -Name Duration -Value $Duration
-        Add-Member -InputObject $Configuration -MemberType NoteProperty -Name Format -Value $Format
-    }
-    return $Configuration
+    # Invocation parameters overwrite load file
+    Add-Member -InputObject $Properties -MemberType NoteProperty -Name Query -Value $Query
+    Add-Member -InputObject $Properties -MemberType NoteProperty -Name Duration -Value $Duration
+    Add-Member -InputObject $Properties -MemberType NoteProperty -Name Format -Value $Format
+    return $Properties
 }
 
-function Requests($BaseURL, $Configuration){
-    # Build Headers
-    $Headers =@{
-        "Gravwell-Token" = $Configuration.Key
-        "query" = $Configuration.Query
-        "duration" = $Configuration.Duration
-        "format" = $Configuration.Format
+function Requests($BaseURL, $Properties){
+
+    $Properties =@{
+        "Gravwell-Token" = $Properties.Key
+        "query" = $Properties.Query
+        "duration" = $Properties.Duration
+        "format" = $Properties.Format
     }
 
     # Send request
     Write-Host "Sending request"
-    $QueryRequest = Invoke-WebRequest -URI $BaseURL -Headers $Headers -Method POST -SessionVariable querySession
+    $QueryRequest = Invoke-WebRequest -URI $BaseURL -Headers $Properties -Method POST -SessionVariable querySession
     if($QueryRequest.StatusCode -eq 200){
         Write-Host "Request successful"
-        $Response = $QueryRequest | Select-Object -ExpandProperty RawContent
+        $Response = $QueryRequest | Select-Object -ExpandProperty RawContent 
         Write-Host "Writing contents to $Outfile"
         $Response | Out-File $OutFile
     }else{
-        Write-Host "Something went wrong with status" $QueryRequest.StatusCode
+        Write-Host "Something went wrong"
     }
 }
 
